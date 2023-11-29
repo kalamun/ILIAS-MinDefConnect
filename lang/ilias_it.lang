@@ -1,0 +1,6 @@
+configuration_saved#:#Configurazione salvata
+settings#:#Impostazioni di MinDef Connect
+plugin_enabled#:#Attivo
+compatible_version#:#La versione attuale di ILIAS è compatibile con questo plugin.
+incompatible_version#:#La versione attuale di ILIAS non è compatibile con questo plugin, ma puoi provare comunque ad attivarlo.
+not_writable#:#Non hai i permessi di scrittura sui file ILIAS
