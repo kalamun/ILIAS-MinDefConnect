@@ -34,14 +34,14 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI {
 
       $this->replace_list = [
         [ // ILIAS 7
-            "path" => $_SERVER['DOCUMENT_ROOT'] . "/Services/LDAP/classes/class.ilLDAPCronSynchronization.php",
+            "path" => "./Services/LDAP/classes/class.ilLDAPCronSynchronization.php",
             "match" => 'setNewUserAuthMode($this->current_server->getAuthenticationMappingKey())',
-            "replace" => 'setNewUserAuthMode("openid")',
+            "replace" => 'setNewUserAuthMode("oidc")',
         ],
         [ // ILIAS 8
-            "path" => $_SERVER['DOCUMENT_ROOT'] . "/Services/LDAP/classes/class.ilLDAPCronSynchronization.php",
+            "path" => "./Services/LDAP/classes/class.ilLDAPCronSynchronization.php",
             "match" => 'setNewUserAuthMode($current_server->getAuthenticationMappingKey())',
-            "replace" => 'setNewUserAuthMode("openid")',
+            "replace" => 'setNewUserAuthMode("oidc")',
         ],
       ];
     }
