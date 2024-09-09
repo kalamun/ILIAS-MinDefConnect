@@ -1,17 +1,25 @@
-<h1>Description</h1>
+# Description
 
 Ce plugin ajoute une tache CRON au planificateur de taches d'ILIAS.
-Il permet :<ul>
-	<li> de gérer plus finement la date d'éxecution de la tâche (un jour de la semaine ou tous les jours).</li>
-	<li> de mettre à jours les champs d'un utilisateur identifié par openidConnect sur la base d'un annuaire LDAP.</li>
-	<li> de gérer la pagination d'un LDAP.</li></ul>
+Il permet :
+- de gérer plus finement la date d'éxecution de la tâche (un jour de la semaine ou tous les jours).</li>
+- de mettre à jours les champs d'un utilisateur identifié par openidConnect sur la base d'un annuaire LDAP.</li>
+- de gérer la pagination d'un LDAP.
 	
-<h1>Prérequis</h1>
+## Prérequis
 
 Si la fonction de synchonisation openidConnect est activée, il faut <b>qu'un seul LDAP</b> soit déclaré et actif dans l'administration d'ILIAS.<br>
 La tâche CRON ajoutée par le plugin peut rentrer en conflit avec la tache CRON "synchroniser les utilisateurs LDAP" native à ILIAS, il est fortement conseillé de <b>désactiver</b> cette dernière.
 
-<h1>Installation</h1>
+## Installation
+
+## Install
+
+```
+mkdir -p Customizing/global/plugins/Services/Cron/CronHook
+cd Customizing/global/plugins/Services/Cron/CronHook
+git clone https://github.com/kalamun/ILIAS-MinDefConnect.git MinDefConnect
+```
 
 Après avoir téléchargé le plugin (fichier Zip) à partir de GitHub, décompresser l'archive et renommer le dossier (retirer le suffixe de branche, ex -master).<br>
 Copier ce dossier dans l'arborescence de votre installation ILIAS, à l'emplacement suivant (créer les dossiers et sous-dossiers) :<br><div align="center">Customizing/global/plugins/Services/Cron/CronHook</div><br>
@@ -22,15 +30,17 @@ Cliquer sur "Rafraichir" pour actualiser la traduction<br>
 Il n'y a pas d'options de configuration pour ce plugin.<br>
 Une tache cron a du être ajoutée à la liste des tâches existantes.
 
-<h1>Utilisation</h1>
-<h2>Planification de la tâche</h2>
+## Utilisation
+### Planification de la tâche
 Choisir un jour de la semaine à laquelle vous souhaitez executer la tâche Cron. la tâche peut être executée tous les jours en sélectionnant "tous les jours".
-<h2>Synchronisation openidConnect</h2>
+
+### Synchronisation openidConnect
 Cette fonctionnalité permet de remplir et de maintenir à jour les champs standards d'une fiche utilisateur sur la base des informations contenues dans un annuaire LDAP.<br>
 Pour utiliser cette fonctionnalité, il faut qu'un LDAP <b>et qu'un seul</b> soit configué et actif dans la rubrique "utilisateurs->authentification->ldap".<br>
 Si c'est le cas, lors de l'éxecution de la tâche, le LDAP sera lu, les utilisateurs dont le compte n'est pas encore créé dans la BDD d'ILIAS seront créés avec le mode d'authentification "oidc", les comptes oidc existants seront mis à jour avec les informations contenues dans le LDAP.
 <b>ATTENTION : Si des comptes LDAP existent avant l'éxecution de la tache CRON avec la case oidc activée, le compte existant sera toujours taggé LDAP et un second compte oidc sera créé. Il peut en résulter une perte des données de suivi de ce compte. Pour éviter ceci, il faut tout d'abord effectuer une requéte SQL pour changer le mode d'authentification de LDAP à oidc puis cocher la case oidc dans le plug-in et lancer la tâche CRON. Les comptes existants seront mis à jour et les comptes absents seront créés.</b>
-<h2>Gestion de la pagination LDAP</h2>
+
+### Gestion de la pagination LDAP
 Depuis la version 6.20, ILIAS prend en charge les gros annuaires LDAP. Un système de pagination a été mis en place et la liste des utilisateurs du LDAP est organisée par pages de 100 utilisateurs.<br>
 Cette fonction est interne au LDAP et disponible à partir du protocole LDAP V3.<br>
 Si cette fonction n'est pas disponible ou fonctionne mal, il est possible de ne pas en tenir compte et de limiter le nombre d'utilisateur remonté à chaque requête. la requête d'interrogation du LDAP peut se faire selon 3 modes différents :<ol>
