@@ -1,21 +1,11 @@
-ldap_plg_sync_cron_title#:#LDAP User Synchronization (Plugin)
-ldap_plg_sync_cron_info#:#If activated, user accounts will be imported from the LDAP directory and synchronised continuously as an option.
-ldap_plg_sync_day_of_run#:#Day of cronJob
-ldap_plg_sync_mon#:#Monday
-ldap_plg_sync_tue#:#Tuesday
-ldap_plg_sync_wed#:#Wednesday
-ldap_plg_sync_thu#:#Thuesday
-ldap_plg_sync_fri#:#Friday
-ldap_plg_sync_sat#:#Saturday
-ldap_plg_sync_sun#:#Sunday
-ldap_plg_sync_all#:#Every days
-ldap_plg_sync_not_good_day#:#It isn't the good day
-ldap_plg_sync_good_day#:#It's the good day
-ldap_plg_sync_mindefConnect#:#Synchronize openIdconnect accounts
-ldap_plg_sync_mindefConnect_info#:#Synchronizes openidConnect (mindefConnect) accounts based on LDAP linked to openId authentication.
-ldap_plg_sync_uid_choice#:#Pagination managing
-ldap_plg_sync_uid_choice_pagination_info#:#Activate pagination control. Enabled for protocole V3 and up, LDAP results are pages of 100 users each.
-ldap_plg_sync_uid_choice_info#:#Set the methode for LDAP requesting to limit the number of users if the pagination is off.
-ldap_plg_sync_uid_choice_default_info#:#Users are searched by alphabetic order a*, b*, c*,....
-ldap_plg_sync_uid_choice_annudef_info#:#Users are searched like : *.aa*, *.ab*, *.ac., ....,*.ba*,*.bb*, ....
-ldap_plg_sync_uid_choice_drcpt_info#:#Users are searched like : a.a*, a.b*,a.c*,...., b.a*,b.b*, .......
+configuration#:#MinDefConnect setup
+login_page#:#Login page
+hide_ilias_login_form#:#Hide ILIAS login form
+hide_ilias_login_form_info#:#To force the display of the login form, add <code><a href="/?login-form">?login-form</a></code> to the URL
+mindefconnect_status#:#MinDefConnect
+mindefconnect_version#:#compatible with
+mindefconnect_not_compatible#:#no compatible version found
+mindefconnect_status_is_enabled#:#MinDefConnect is enabled
+mindefconnect_status_is_disabled#:#MinDefConnect is disabled
+mindefconnect_status_is_enabled_info#:#Uncheck to disable MinDefConnect
+mindefconnect_status_is_disabled_info#:#Check to enable MinDefConnect

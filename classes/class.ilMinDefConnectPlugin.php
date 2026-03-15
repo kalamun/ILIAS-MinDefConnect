@@ -1,53 +1,51 @@
 <?php
-//use ILIAS/DI/Container;
-require_once(__DIR__.'/class.ilMinDefConnectCron.php');
+/**
+ * Class ilMinDefConnectPlugin
+ * @author  Kalamun <rp@kalamun.net>
+ * @version $Id$
+ */
 
-class ilMinDefConnectPlugin extends ilCronHookPlugin {
+class ilMinDefConnectPlugin extends ilUserInterfaceHookPlugin
+{
+    const CTYPE = "Services";
+    const CNAME = "UIComponent";
+    const SLOT_ID = "uihk";
+    const PLUGIN_NAME = "MinDefConnect";
+    protected static $instance = null;
 
-	const PLUGIN_ID = "xmindefconnect";
-	const PLUGIN_NAME = "MinDefConnect";
-	
+    public function __construct(
+        \ilDBInterface $db,
+        \ilComponentRepositoryWrite $component_repository,
+        string $id
+    )
+    {
+        parent::__construct($db, $component_repository, $id);
+    }
 
-	/** @var Container $dic */
-    	private $dic;
+    public static function getInstance() : ilMinDefConnectPlugin
+    {
+        global $DIC;
 
-    
-	public function __construct() {
-		global $DIC; 
-		$this->db = $DIC->database();
-		$this->dic = $DIC;
-		parent::__construct($this->db, $DIC["component.repository"], self::PLUGIN_ID);
-	}
-	
-	public static function getInstance(): ?ilMinDefConnectPlugin
-	{
-		return new ilMinDefConnectPlugin;
-	}
-	
-	
-	/**
-	 * @inheritdoc
-	 */
-	public function getPluginName():string {
-		return self::PLUGIN_NAME;
-	}
-	
-	
-	/**
-	 * @inheritdoc
-	 */
-	public function getCronJobInstances():array {
-		return [
-			new ilMinDefConnectCron()
-		];
-	}
-	
-	
-	/**
-	 * @inheritdoc
-	 */
-	public function getCronJobInstance($a_job_id):ilCronJob
-	{
-		return new ilMinDefConnectCron();
-	}
+        if (self::$instance instanceof self) {
+            return self::$instance;
+        }
+
+        $component_repository = $DIC['component.repository'];
+        $component_factory = $DIC['component.factory'];
+
+        $plugin_info = $component_repository->getComponentByTypeAndName(
+            self::CTYPE,
+            self::CNAME
+        )->getPluginSlotById(self::SLOT_ID)->getPluginByName(self::PLUGIN_NAME);
+
+        self::$instance = $component_factory->getPlugin($plugin_info->getId());
+
+        return self::$instance;
+    }
+
+    public function getPluginName() : string
+    {
+        return self::PLUGIN_NAME;
+    }
+
 }
