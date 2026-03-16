@@ -72,7 +72,7 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
       $content = file_get_contents($this->get_local_fullpath($file_path));
       if (strpos($content, '* edited by MinDefConnect v') !== false) {
         $this->is_active = true;
-        preg_match('#^((\d+\.)+\d+)#', substr($content, strpos($content, '* edited by MinDefConnect v') + 24, 8), $matched_version);
+        preg_match('#^((\d+\.)+\d+)#', substr($content, strpos($content, '* edited by MinDefConnect v') + 27, 8), $matched_version);
         $this->compatible_version = $matched_version[0];
       } else {
         foreach (glob(__DIR__ . '/../vendor/bkup_files/*', GLOB_ONLYDIR) as $path) {
