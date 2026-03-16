@@ -163,22 +163,28 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
     $field = $this->ui_factory->input()->field();
     $plugin = $this->plugin_object;
 
+    $can_patch = $this->is_writable && !empty($this->compatible_version);
+
     $values = [
       'login' => [
         'hide_ilias_login_form' => $this->ilias->getSetting('hide_ilias_login_form') == true,
       ],
-      'patch' => $this->compatible_version ? [
-        'is_active' => $this->is_active,
-      ] : [],
+      'patch' => [],
     ];
 
     $login_section = $field->section([
       'hide_ilias_login_form' => $field->checkbox($plugin->txt('hide_ilias_login_form'), $plugin->txt('hide_ilias_login_form_info')),
     ], $plugin->txt('login_page'));
 
-    $patch_section = $field->section(!empty($this->compatible_version) ? [
-      'is_active' => $field->checkbox($plugin->txt('mindefconnect_status_is_' . ($this->is_active ? 'enabled' : 'disabled')), $plugin->txt('mindefconnect_status_is_' . ($this->is_active ? 'enabled' : 'disabled') . '_info')),
-    ] : [], $plugin->txt('mindefconnect_status') . ' (' . !empty($this->compatible_version) ? ($plugin->txt('mindefconnect_version') . ' v' . $this->compatible_version) : $plugin->txt('mindefconnect_not_compatible') . ')');
+    if ($can_patch) {
+      $values['patch']['is_active'] = $this->is_active;
+
+      $patch_section = $field->section([
+        'is_active' => $field->checkbox($plugin->txt('mindefconnect_status_is_' . ($this->is_active ? 'enabled' : 'disabled')), $plugin->txt('mindefconnect_status_is_' . ($this->is_active ? 'enabled' : 'disabled') . '_info')),
+      ], $plugin->txt('mindefconnect_status') . ' (' . $plugin->txt('mindefconnect_version') . ' v' . $this->compatible_version . ')');
+    } else {
+      $patch_section = $field->section([], !$this->is_writable ? $plugin->txt('mindefconnect_not_writable') : $plugin->txt('mindefconnect_not_compatible'));
+    }
 
     $main_section = $field
       ->section([
