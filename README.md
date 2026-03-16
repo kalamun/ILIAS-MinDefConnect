@@ -1,6 +1,6 @@
 # ILIAS MinDef xApi
 This plug-in will enable ILIAS to use xApi.
-Supports ILIAS 7 to 10.
+Supports ILIAS 10.
 
 Copyright (c) 2024-2025 Roberto Pasini <bonjour@kalamun.net>
 GPLv3, see LICENSE
@@ -10,9 +10,10 @@ Author: Roberto Pasini <bonjour@kalamun.net>
 ## Install
 
 ```
-mkdir -p Customizing/global/plugins/Services/UIComponent/UserInterfaceHook
-cd Customizing/global/plugins/Services/UIComponent/UserInterfaceHook
+mkdir -p public/Customizing/global/plugins/Services/UIComponent/UserInterfaceHook
+cd public/Customizing/global/plugins/Services/UIComponent/UserInterfaceHook
 git clone https://github.com/kalamun/ILIAS-MinDefxApi.git MinDefxApi
+git checkout ilias_v10
 ```
 
 ## Activation
@@ -29,9 +30,11 @@ First of all it will perform some compatibility checks.
 It could be the case that you don't have the writing permissions: in that case you can't apply the modifications and you have to contact the system administration to give to the Apache user (usually `www-data`) the right permissions.
 It could also be the case that your ILIAS version is not compatible with the plugin: in that case a warning will be displayed.
 
-To apply the patch, click the button "Enable".
-To remove the patch, click the button "Disable".
+To apply the patch, check the "Enable" checkbox, then click `Save`.
+To remove the patch, uncheck the "Enable" checkbox, then click `Save`.
+
+You can also choose to remove the default login form from the login page by checking the relative box.
 
 
 ## Requirements
-This plugin is compatible with ILIAS v7.x, v8.x, v10.x
+This plugin is compatible with ILIAS v10.5, untested on other v10.x versions.
