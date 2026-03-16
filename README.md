@@ -1,8 +1,8 @@
 # ILIAS MinDef xApi
-This plug-in will enable ILIAS to use xApi.
+This plug-in will enable ILIAS users to use access through MinDefConnect.
 Supports ILIAS 10.
 
-Copyright (c) 2024-2025 Roberto Pasini <bonjour@kalamun.net>
+Copyright (c) 2026 Roberto Pasini <bonjour@kalamun.net>
 GPLv3, see LICENSE
 
 Author: Roberto Pasini <bonjour@kalamun.net>
@@ -12,7 +12,7 @@ Author: Roberto Pasini <bonjour@kalamun.net>
 ```
 mkdir -p public/Customizing/global/plugins/Services/UIComponent/UserInterfaceHook
 cd public/Customizing/global/plugins/Services/UIComponent/UserInterfaceHook
-git clone https://github.com/kalamun/ILIAS-MinDefxApi.git MinDefxApi
+git clone https://github.com/kalamun/ILIAS-MinDefConnect.git MinDefConnect
 git checkout ilias_v10
 ```
 
