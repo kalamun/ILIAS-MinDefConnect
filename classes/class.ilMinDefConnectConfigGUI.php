@@ -179,11 +179,23 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
     if ($can_patch) {
       $values['patch']['is_active'] = $this->is_active;
 
+      $title = $plugin->txt('mindefconnect_status') . ' (' . $plugin->txt('mindefconnect_version') . ' v' . $this->compatible_version . ')';
+      $description = '';
+
       $patch_section = $field->section([
         'is_active' => $field->checkbox($plugin->txt('mindefconnect_status_is_' . ($this->is_active ? 'enabled' : 'disabled')), $plugin->txt('mindefconnect_status_is_' . ($this->is_active ? 'enabled' : 'disabled') . '_info')),
-      ], $plugin->txt('mindefconnect_status') . ' (' . $plugin->txt('mindefconnect_version') . ' v' . $this->compatible_version . ')');
+      ], $title, $description);
     } else {
-      $patch_section = $field->section([], !$this->is_writable ? $plugin->txt('mindefconnect_not_writable') : $plugin->txt('mindefconnect_not_compatible'));
+      if ($this->is_writable) {
+        $title = $plugin->txt('mindefconnect_not_compatible');
+      } else {
+        $title = $plugin->txt('mindefconnect_not_writable');
+        $description = $plugin->txt('mindefconnect_not_writable_info');
+        foreach ($this->replace_list as $file_path) {
+          $description .= '<br><code>chown www-data:www-data ' . $_SERVER['DOCUMENT_ROOT'] . $this->get_local_fullpath($file_path) . '</code>';
+        }
+      }
+      $patch_section = $field->section([], $title, $description);
     }
 
     $main_section = $field

@@ -5,7 +5,8 @@ hide_ilias_login_form_info#:#To force the display of the login form, add <code><
 mindefconnect_status#:#MinDefConnect
 mindefconnect_version#:#compatible with
 mindefconnect_not_compatible#:#no compatible version found
-mindefconnect_not_writable#:#Some files can't be patched because of permission issues
+mindefconnect_not_writable#:#Some file can't be patched because of permission issues
+mindefconnect_not_writable_info#:#Try executing these commands in the server terminal
 mindefconnect_status_is_enabled#:#MinDefConnect is enabled
 mindefconnect_status_is_disabled#:#MinDefConnect is disabled
 mindefconnect_status_is_enabled_info#:#Uncheck to disable MinDefConnect

@@ -1,0 +1,13 @@
+configuration#:#Configuration de MinDefConnect
+login_page#:#Page de connexion
+hide_ilias_login_form#:#Masquer le formulaire de connexion ILIAS
+hide_ilias_login_form_info#:#Pour forcer l'affichage du formulaire de connexion, ajoutez <code><a href="/?login-form">?login-form</a></code> à l'URL
+mindefconnect_status#:#MinDefConnect
+mindefconnect_version#:#compatible avec
+mindefconnect_not_compatible#:#aucune version compatible trouvée
+mindefconnect_not_writable#:#Certains fichiers ne peuvent pas être modifiés en raison de problèmes d'autorisation
+mindefconnect_not_writable_info#:#Essayez d'exécuter ces commandes dans le terminal du serveur
+mindefconnect_status_is_enabled#:#MinDefConnect est activé
+mindefconnect_status_is_disabled#:#MinDefConnect est désactivé
+mindefconnect_status_is_enabled_info#:#Décochez pour désactiver MinDefConnect
+mindefconnect_status_is_disabled_info#:#Cochez pour activer MinDefConnect
