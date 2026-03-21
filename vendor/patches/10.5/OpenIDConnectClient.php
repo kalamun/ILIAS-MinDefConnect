@@ -439,14 +439,15 @@ class OpenIDConnectClient
         } else {
             $signout_params = [
                 'id_token_hint' => $idToken,
-                'post_logout_redirect_uri' => $redirect
+                'post_logout_redirect_uri' => $redirect,
             ];
         }
 
         $sign_out_endpoint .= (strpos($sign_out_endpoint, '?') === false ? '?' : '&') . http_build_query($signout_params, '', '&', $this->encType);
         $url_query = parse_url($sign_out_endpoint, PHP_URL_QUERY);
+        $url_address = strtok($sign_out_endpoint, '?');
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://example.com/target');
+        curl_setopt($ch, CURLOPT_URL, $url_address);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
         curl_setopt($ch, CURLOPT_POSTFIELDS, $url_query);
