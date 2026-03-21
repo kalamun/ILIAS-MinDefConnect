@@ -1,28 +1,28 @@
 <?php
+
 /**
  * Class ilMinDefConnectPlugin
  * @author  Kalamun <rp@kalamun.net>
  * @version $Id$
  */
-
 class ilMinDefConnectPlugin extends ilUserInterfaceHookPlugin
 {
-    const CTYPE = "Services";
-    const CNAME = "UIComponent";
-    const SLOT_ID = "uihk";
-    const PLUGIN_NAME = "MinDefConnect";
+    const CTYPE = 'Services';
+    const CNAME = 'UIComponent';
+    const SLOT_ID = 'uihk';
+    const PLUGIN_NAME = 'MinDefConnect';
+
     protected static $instance = null;
 
     public function __construct(
         \ilDBInterface $db,
         \ilComponentRepositoryWrite $component_repository,
         string $id
-    )
-    {
+    ) {
         parent::__construct($db, $component_repository, $id);
     }
 
-    public static function getInstance() : ilMinDefConnectPlugin
+    public static function getInstance(): ilMinDefConnectPlugin
     {
         global $DIC;
 
@@ -43,9 +43,29 @@ class ilMinDefConnectPlugin extends ilUserInterfaceHookPlugin
         return self::$instance;
     }
 
-    public function getPluginName() : string
+    public function getPluginName(): string
     {
         return self::PLUGIN_NAME;
     }
 
+    protected function afterDeactivation(): void
+    {
+        self::disableEverything();
+        parent::afterDeactivation();
+    }
+
+    protected function beforeUninstall(): bool
+    {
+        self::disableEverything();
+        return parent::beforeUninstall();
+    }
+
+    protected function disableEverything()
+    {
+        global $DIC;
+        $DIC['ilias']->setSetting('hide_ilias_login_form', false);
+
+        $ilMinDefConnectConfigGUI = new ilMinDefConnectConfigGUI();
+        $ilMinDefConnectConfigGUI->unpatch();
+    }
 }

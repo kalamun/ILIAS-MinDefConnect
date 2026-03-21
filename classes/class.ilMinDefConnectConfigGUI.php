@@ -123,15 +123,18 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
   public function unpatch()
   {
     // copy bkup files to destinations
-    foreach ($this->replace_list as $file_path) {
-      if ($this->compatible_version) {
-        $file_name = $this->get_local_filename($file_path);
-        $copy_from = __DIR__ . '/../vendor/bkup_files/' . $this->compatible_version . '/' . $file_name;
-        $copy_to = $this->get_local_fullpath($file_path);
+    if (!$this->is_active)
+      return;
+    if (!$this->compatible_version)
+      return;
 
-        if (file_exists($copy_from) && file_exists($copy_to)) {
-          copy($copy_from, $copy_to);
-        }
+    foreach ($this->replace_list as $file_path) {
+      $file_name = $this->get_local_filename($file_path);
+      $copy_from = __DIR__ . '/../vendor/bkup_files/' . $this->compatible_version . '/' . $file_name;
+      $copy_to = $this->get_local_fullpath($file_path);
+
+      if (file_exists($copy_from) && file_exists($copy_to)) {
+        copy($copy_from, $copy_to);
       }
     }
   }
