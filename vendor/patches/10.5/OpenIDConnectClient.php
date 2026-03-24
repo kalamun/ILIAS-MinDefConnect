@@ -458,6 +458,8 @@ class OpenIDConnectClient
 
         if (!empty($redirect)) {
             $this->redirect($redirect);
+        } else {
+            $this->redirect('/ilias.php?baseClass=ilstartupgui&cmd=showLogout&lang=en');
         }
     }
 
