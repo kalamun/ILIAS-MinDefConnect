@@ -186,7 +186,7 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
         /* added to be compliant with MinDefConnect */
         /* Kalamun <bonjour@kalamun.net> */
-        $oidc->providerConfigParam(array('userinfo_endpoint' => $this->settings->getProvider() . '/userinfo'));
+        $oidc->providerConfigParam(array('userinfo_endpoint' => $this->settings->getProvider() . '/protocol/openid-connect/userinfo'));
 
         return $oidc;
     }

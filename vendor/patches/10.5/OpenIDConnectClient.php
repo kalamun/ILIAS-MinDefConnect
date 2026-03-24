@@ -453,10 +453,12 @@ class OpenIDConnectClient
         curl_setopt($ch, CURLOPT_POSTFIELDS, $url_query);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+        // $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
         curl_close($ch);
 
-        $this->redirect($redirectedUrl);
+        if (!empty($redirect)) {
+            $this->redirect($redirect);
+        }
     }
 
     /**
