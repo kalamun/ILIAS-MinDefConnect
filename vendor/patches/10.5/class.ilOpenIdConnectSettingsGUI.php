@@ -184,12 +184,12 @@ class ilOpenIdConnectSettingsGUI
         $activation->setChecked($this->settings->getActive());
         $form->addItem($activation);
 
-               // --- PATCH: UserInfo endpoint toggle ---
+        // --- PATCH: UserInfo endpoint toggle ---
         $cb_userinfo = new ilCheckboxInputGUI(
-            $this->lng->txt('auth_oidc_use_userinfo_endpoint'),
+            'Fetch additional claims from UserInfo endpoint',
             'use_userinfo_endpoint'
         );
-        $cb_userinfo->setInfo($this->lng->txt('auth_oidc_use_userinfo_endpoint_info'));
+        $cb_userinfo->setInfo('When enabled, ILIAS calls the identity provider\'s UserInfo endpoint after a successful login to retrieve additional user attributes (e.g. email, given name). Enable this when your IdP does not embed all required claims in the ID token. If the UserInfo endpoint is unavailable, authentication falls back to the ID token claims only.');
         $cb_userinfo->setChecked($this->settings->getUseUserinfoEndpoint());
         $form->addItem($cb_userinfo);
         // --- END PATCH ---
