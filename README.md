@@ -33,6 +33,7 @@ It could also be the case that your ILIAS version is not compatible with the plu
 To apply the patch, check the "Enable" checkbox, then click `Save`.
 To remove the patch, uncheck the "Enable" checkbox, then click `Save`.
 
+When the patch is enabled, you can navigate to the OIDC settings page (`Administration` > `Authentication and Registration` > `OpenID Connect`) and enable the UserInfo endpoint support by checking the relative checkbox.
 You can also choose to remove the default login form from the login page by checking the relative box.
 
 
