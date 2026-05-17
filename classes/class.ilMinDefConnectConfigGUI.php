@@ -36,6 +36,8 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
 
     $this->replace_list = [
       ['../components/ILIAS/OpenIdConnect/classes/', 'class.ilAuthProviderOpenIdConnect.php'],
+      ['../components/ILIAS/OpenIdConnect/classes/', 'class.ilOpenIdConnectSettings.php'],
+      ['../components/ILIAS/OpenIdConnect/classes/', 'class.ilOpenIdConnectSettingsGUI.php'],
       ['../vendor/composer/vendor/jumbojett/openid-connect-php/src/', 'OpenIDConnectClient.php'],
     ];
 

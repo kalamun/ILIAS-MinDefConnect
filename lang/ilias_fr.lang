@@ -11,3 +11,5 @@ mindefconnect_status_is_enabled#:#MinDefConnect est activé
 mindefconnect_status_is_disabled#:#MinDefConnect est désactivé
 mindefconnect_status_is_enabled_info#:#Décochez pour désactiver MinDefConnect
 mindefconnect_status_is_disabled_info#:#Cochez pour activer MinDefConnect
+auth#:#auth_oidc_use_userinfo_endpoint#:#Fetch additional claims from UserInfo endpoint
+auth#:#auth_oidc_use_userinfo_endpoint_info#:#When enabled, ILIAS calls the identity provider's UserInfo endpoint after a successful login to retrieve additional user attributes (e.g. email, given name). Enable this when your IdP does not embed all required claims in the ID token. If the UserInfo endpoint is unavailable, authentication falls back to the ID token claims only.

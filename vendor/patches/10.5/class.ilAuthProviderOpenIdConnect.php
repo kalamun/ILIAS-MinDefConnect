@@ -21,6 +21,20 @@ declare(strict_types=1);
 
 use Jumbojett\OpenIDConnectClient;
 
+/**
+ * Class ilAuthProviderOpenIdConnect
+ *
+ * PATCH: Added optional UserInfo endpoint support.
+ *
+ * When ilOpenIdConnectSettings::getUseUserinfoEndpoint() returns true the
+ * provider calls $oidc->requestUserInfo() immediately after authenticate()
+ * and merges the returned claims on top of the verified ID-token claims.
+ * Per OIDC Core §5.3.2, UserInfo claims take precedence on conflict.
+ *
+ * The call is wrapped in its own try/catch so a UserInfo failure is
+ * non-fatal: authentication proceeds with ID-token claims only and a
+ * warning is logged.
+ */
 class ilAuthProviderOpenIdConnect extends ilAuthProvider
 {
     private const OIDC_AUTH_IDTOKEN = 'oidc_auth_idtoken';
@@ -91,25 +105,39 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
                 $oidc->setHttpProxy($host);
             }
 
-            $this->logger->debug(
-                'Redirect url is: '
-                . $oidc->getRedirectURL()
-            );
+            $this->logger->debug('Redirect url is: ' . $oidc->getRedirectURL());
 
             $oidc->addScope($this->settings->getAllScopes());
             if ($this->settings->getLoginPromptType() === ilOpenIdConnectSettings::LOGIN_ENFORCE) {
                 $oidc->addAuthParam(['prompt' => 'login']);
             }
 
+            // Triggers the Authorization Code flow; redirects if not yet
+            // authenticated, returns normally once tokens are available.
             $oidc->authenticate();
-            // user is authenticated, otherwise redirected to authorization endpoint or exception
 
+            // Start with claims from the verified ID token.
             $claims = $oidc->getVerifiedClaims();
-            $this->logger->dump($claims, ilLogLevel::DEBUG);
-            $status = $this->handleUpdate($status, $claims);
 
-            // @todo : provide a general solution for all authentication methods
-            // $_GET['target'] = $this->getCredentials()->getRedirectionTarget();// TODO PHP8-REVIEW Please eliminate this. Mutating the request is not allowed and will not work in ILIAS 8.
+            // -----------------------------------------------------------------
+            // PATCH: optionally fetch and merge UserInfo endpoint claims.
+            //
+            // The jumbojett library's requestUserInfo() sends a Bearer-token
+            // request to the discovery-document's userinfo_endpoint using the
+            // access token that was obtained during authenticate().  No extra
+            // configuration is needed beyond having a valid access token.
+            //
+            // Why merge instead of replace:
+            //   • The ID token is cryptographically verified; we trust it.
+            //   • UserInfo may carry additional claims (email, profile, …).
+            //   • When the same claim appears in both, OIDC §5.3.2 says the
+            //     UserInfo value should be used — hence we overwrite.
+            // -----------------------------------------------------------------
+            if ($this->settings->getUseUserinfoEndpoint()) {
+                $claims = $this->mergeUserInfoClaims($oidc, $claims);
+            }
+
+            $status = $this->handleUpdate($status, $claims);
 
             if ($this->settings->getLogoutScope() === ilOpenIdConnectSettings::LOGOUT_SCOPE_GLOBAL) {
                 ilSession::set(self::OIDC_AUTH_IDTOKEN, $oidc->getIdToken());
@@ -124,6 +152,60 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
         }
     }
 
+    // -----------------------------------------------------------------------
+    // NEW: UserInfo merge helper - MinDefConnect / kalamun
+    // -----------------------------------------------------------------------
+
+    /**
+     * Call the IdP's UserInfo endpoint and merge the returned claims on top
+     * of $id_token_claims.  Returns the merged object.
+     *
+     * Failures are non-fatal: we log a warning and fall back to the
+     * ID-token claims so that authentication still succeeds.
+     *
+     * @param  OpenIDConnectClient $oidc          Authenticated client instance.
+     * @param  stdClass            $id_token_claims  Verified claims from getVerifiedClaims().
+     * @return stdClass                           Merged claims object.
+     */
+    private function mergeUserInfoClaims(OpenIDConnectClient $oidc, stdClass $id_token_claims): stdClass
+    {
+        try {
+            $this->logger->debug('Requesting additional claims from UserInfo endpoint.');
+            $userinfo = $oidc->requestUserInfo();
+
+            if (!is_object($userinfo)) {
+                $this->logger->warning('UserInfo endpoint returned a non-object response; skipping merge.');
+                return $id_token_claims;
+            }
+
+            $this->logger->dump($userinfo, ilLogLevel::DEBUG);
+
+            // Merge: UserInfo claims win on conflict (OIDC Core §5.3.2).
+            $merged = clone $id_token_claims;
+            foreach ($userinfo as $key => $value) {
+                $merged->$key = $value;
+            }
+
+            $this->logger->debug('UserInfo claims merged successfully.');
+            return $merged;
+        } catch (\Jumbojett\OpenIDConnectClientException $e) {
+            // The IdP's discovery document may not advertise a userinfo_endpoint,
+            // or the endpoint may be temporarily unavailable.
+            $this->logger->warning(
+                'UserInfo endpoint request failed (falling back to ID-token claims): '
+                . $e->getMessage()
+            );
+            return $id_token_claims;
+        } catch (Exception $e) {
+            $this->logger->warning(
+                'Unexpected error fetching UserInfo claims (falling back to ID-token claims): '
+                . $e->getMessage()
+            );
+            return $id_token_claims;
+        }
+    }
+
+
     /**
      * @param stdClass $user_info
      */
@@ -137,8 +219,8 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
             return $status;
         }
 
-        $uid_field = $this->settings->getUidField();
-        $ext_account = $user_info->{$uid_field} ?? '';
+        $uid_field    = $this->settings->getUidField();
+        $ext_account  = $user_info->{$uid_field} ?? '';
 
         if (!is_string($ext_account) || $ext_account === '') {
             $this->logger->error('Could not determine valid external account, value is empty or not a string.');
@@ -165,7 +247,6 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
             ilSession::set('used_external_auth_mode', ilAuthUtils::AUTH_OPENID_CONNECT);
             $status->setAuthenticatedUserId($user_id);
             $status->setStatus(ilAuthStatus::STATUS_AUTHENTICATED);
-            // $_GET['target'] = $this->getCredentials()->getRedirectionTarget();// TODO PHP8-REVIEW Please eliminate this. Mutating the request is not allowed and will not work in ILIAS 8.
         } catch (ilOpenIdConnectSyncForbiddenException) {
             $status->setStatus(ilAuthStatus::STATUS_AUTHENTICATION_FAILED);
             $status->setReason(self::ERR_AUTH_WRONG_LOGIN);
@@ -186,7 +267,7 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
         /* added to be compliant with MinDefConnect */
         /* Kalamun <bonjour@kalamun.net> */
-        $oidc->providerConfigParam(array('userinfo_endpoint' => $this->settings->getProvider() . '/protocol/openid-connect/userinfo'));
+        $oidc->providerConfigParam(array('userinfo_endpoint' => $this->settings->getProvider() . '/userinfo'));
 
         return $oidc;
     }
