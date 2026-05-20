@@ -428,7 +428,7 @@ class OpenIDConnectClient
      *
      * @throws OpenIDConnectClientException
      */
-    public function signOut(string $idToken, $redirect)
+    public function signOut(string $idToken, $redirect, bool $usePost = true)
     {
         /* This function has been adapted to be compliant with MinDefConnect */
         /* Kalamun <bonjour@kalamun.net> */
@@ -443,6 +443,7 @@ class OpenIDConnectClient
             ];
         }
 
+/*
         $sign_out_endpoint .= (strpos($sign_out_endpoint, '?') === false ? '?' : '&') . http_build_query($signout_params, '', '&', $this->encType);
         $url_query = parse_url($sign_out_endpoint, PHP_URL_QUERY);
         $url_address = strtok($sign_out_endpoint, '?');
@@ -461,6 +462,50 @@ class OpenIDConnectClient
         } else {
             $this->redirect('/ilias.php?baseClass=ilstartupgui&cmd=showLogout&lang=en');
         }
+ */    
+        // Use POST method with auto-submitting form
+        if ($usePost) {
+            $this->postRedirect($sign_out_endpoint, $signout_params);
+        } else {
+            // Legacy GET method with URL parameters
+            $sign_out_endpoint  .= (strpos($sign_out_endpoint, '?') === false ? '?' : '&') . http_build_query( $signout_params, '', '&', $this->encType);
+            $this->redirect($sign_out_endpoint);
+        }
+    }
+
+    /**
+     * Performs a POST redirect by generating an auto-submitting HTML form
+     *
+     * @param string $url The endpoint URL
+     * @param array $params The POST parameters
+     * @return void
+     */
+    private function postRedirect(string $url, array $params) {
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Redirecting...</title>
+        </head>
+        <body onload="document.logoutForm.submit();">
+            <form name="logoutForm" method="POST" action="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
+                <?php foreach ($params as $key => $value): ?>
+                    <input type="hidden" name="<?php echo htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?>" />
+                <?php endforeach; ?>
+            </form>
+            <noscript>
+                <p>JavaScript is disabled. Please click the button below to logout:</p>
+                <form method="POST" action="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php foreach ($params as $key => $value): ?>
+                        <input type="hidden" name="<?php echo htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?>" />
+                    <?php endforeach; ?>
+                    <input type="submit" value="Logout" />
+                </form>
+            </noscript>
+        </body>
+        </html>
+        <?php
+        exit;
     }
 
     /**
