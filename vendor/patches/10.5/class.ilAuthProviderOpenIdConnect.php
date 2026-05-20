@@ -265,10 +265,6 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
         $oidc->setCodeChallengeMethod('S256');
 
-        /* added to be compliant with MinDefConnect */
-        /* Kalamun <bonjour@kalamun.net> */
-        $oidc->providerConfigParam(array('userinfo_endpoint' => $this->settings->getProvider() . '/userinfo'));
-
         return $oidc;
     }
 }
