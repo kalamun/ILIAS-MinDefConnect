@@ -216,7 +216,7 @@ class ilOpenIdConnectSettingsGUI
             'second_client_id'
         );
         $second_client_id->setRequired(false);
-        $second_client_id->setInfo('Optional: A second client ID for scenarios where multiple client IDs are needed.');
+        $second_client_id->setInfo('Optional: A second client ID used to authenticate admins.');
         $second_client_id->setValue($this->settings->getSecondClientId());
         $form->addItem($second_client_id);
         // --- END PATCH ---

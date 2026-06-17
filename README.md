@@ -36,6 +36,9 @@ To remove the patch, uncheck the "Enable" checkbox, then click `Save`.
 When the patch is enabled, you can navigate to the OIDC settings page (`Administration` > `Authentication and Registration` > `OpenID Connect`) and enable the UserInfo endpoint support by checking the relative checkbox.
 You can also choose to remove the default login form from the login page by checking the relative box.
 
+All the admin users are forced to log-in via OIDC.
+To support the internet workflow, a secondary client ID has been added to the settings page. When set, the admin users will be authentified by using that secondary client ID.
+
 
 ## Requirements
 This plugin is compatible with ILIAS v10.5, untested on other v10.x versions.
