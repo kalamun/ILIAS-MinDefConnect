@@ -39,6 +39,7 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
       ['../components/ILIAS/OpenIdConnect/classes/', 'class.ilOpenIdConnectSettings.php'],
       ['../components/ILIAS/OpenIdConnect/classes/', 'class.ilOpenIdConnectSettingsGUI.php'],
       ['../vendor/composer/vendor/jumbojett/openid-connect-php/src/', 'OpenIDConnectClient.php'],
+      ['../components/ILIAS/Init/classes/', 'class.ilStartUpGUI.php'],
     ];
 
     $this->detect_version();
