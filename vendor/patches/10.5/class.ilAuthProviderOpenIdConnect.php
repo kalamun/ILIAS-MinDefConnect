@@ -25,19 +25,23 @@ use Jumbojett\OpenIDConnectClient;
  * Class ilAuthProviderOpenIdConnect
  *
  * PATCH: Added optional UserInfo endpoint support.
+ * PATCH: Added second_client_id support for admin users.
  *
  * When ilOpenIdConnectSettings::getUseUserinfoEndpoint() returns true the
  * provider calls $oidc->requestUserInfo() immediately after authenticate()
  * and merges the returned claims on top of the verified ID-token claims.
  * Per OIDC Core §5.3.2, UserInfo claims take precedence on conflict.
  *
- * The call is wrapped in its own try/catch so a UserInfo failure is
- * non-fatal: authentication proceeds with ID-token claims only and a
- * warning is logged.
+ * When ilOpenIdConnectSettings::getSecondClientId() is non-empty and the
+ * authenticated user holds the ILIAS administrator role, a second OIDC
+ * round-trip is performed using second_client_id instead of client_id.
  */
 class ilAuthProviderOpenIdConnect extends ilAuthProvider
 {
     private const OIDC_AUTH_IDTOKEN = 'oidc_auth_idtoken';
+    // --- PATCH: Second Client ID ---
+    private const OIDC_USE_SECOND_CLIENT = 'oidc_use_second_client';
+    // --- END PATCH ---
 
     private const ERR_AUTH_FAILED = 'auth_oidc_failed';
 
@@ -92,7 +96,14 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
         }
 
         try {
-            $oidc = $this->initClient();
+            // --- PATCH: Second Client ID — read and consume the session flag ---
+            $use_second_client = (bool) ilSession::get(self::OIDC_USE_SECOND_CLIENT);
+            if ($use_second_client) {
+                ilSession::set(self::OIDC_USE_SECOND_CLIENT, false);
+            }
+            // --- END PATCH ---
+
+            $oidc = $this->initClient($use_second_client);
             $oidc->setRedirectURL(ILIAS_HTTP_PATH . '/openidconnect.php');
 
             $proxy = ilProxySettings::_getInstance();
@@ -136,6 +147,20 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
             if ($this->settings->getUseUserinfoEndpoint()) {
                 $claims = $this->mergeUserInfoClaims($oidc, $claims);
             }
+
+            // --- PATCH: Second Client ID — re-authenticate admins with second_client_id ---
+            if (!$use_second_client && $this->settings->getSecondClientId() !== '') {
+                $uid_field   = $this->settings->getUidField();
+                $ext_account = $claims->{$uid_field} ?? '';
+                if (is_string($ext_account) && $ext_account !== '' && $this->isExternalAccountAdmin($ext_account)) {
+                    $this->logger->debug('Admin user detected; restarting OIDC flow with second_client_id.');
+                    ilSession::set(self::OIDC_USE_SECOND_CLIENT, true);
+                    $this->clearOidcSessionState();
+                    header('Location: ' . ILIAS_HTTP_PATH . '/openidconnect.php');
+                    exit();
+                }
+            }
+            // --- END PATCH ---
 
             $status = $this->handleUpdate($status, $claims);
 
@@ -255,11 +280,17 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
         return $status;
     }
 
-    private function initClient(): OpenIDConnectClient
+    private function initClient(bool $use_second_client = false): OpenIDConnectClient
     {
+        // --- PATCH: Second Client ID ---
+        $client_id = ($use_second_client && $this->settings->getSecondClientId() !== '')
+            ? $this->settings->getSecondClientId()
+            : $this->settings->getClientId();
+        // --- END PATCH ---
+
         $oidc = new OpenIDConnectClient(
             $this->settings->getProvider(),
-            $this->settings->getClientId(),
+            $client_id,
             $this->settings->getSecret()
         );
 
@@ -267,4 +298,38 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
         return $oidc;
     }
+
+    // --- PATCH: Second Client ID helpers ---
+
+    private function isExternalAccountAdmin(string $ext_account): bool
+    {
+        global $DIC;
+
+        $int_account = ilObjUser::_checkExternalAuthAccount(
+            ilOpenIdConnectUserSync::AUTH_MODE,
+            $ext_account
+        );
+
+        if (!$int_account) {
+            return false;
+        }
+
+        $user_id = ilObjUser::_lookupId($int_account);
+        if (!$user_id) {
+            return false;
+        }
+
+        return $DIC->rbac()->review()->isAssigned((int) $user_id, SYSTEM_ROLE_ID);
+    }
+
+    private function clearOidcSessionState(): void
+    {
+        unset(
+            $_SESSION['openid_connect_nonce'],
+            $_SESSION['openid_connect_state'],
+            $_SESSION['openid_connect_code_verifier']
+        );
+    }
+
+    // --- END PATCH ---
 }

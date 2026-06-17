@@ -210,6 +210,17 @@ class ilOpenIdConnectSettingsGUI
         $client_id->setValue($this->settings->getClientId());
         $form->addItem($client_id);
 
+        // --- PATCH: Second Client ID ---
+        $second_client_id = new ilTextInputGUI(
+            'Second Client ID',
+            'second_client_id'
+        );
+        $second_client_id->setRequired(false);
+        $second_client_id->setInfo('Optional: A second client ID for scenarios where multiple client IDs are needed.');
+        $second_client_id->setValue($this->settings->getSecondClientId());
+        $form->addItem($second_client_id);
+        // --- END PATCH ---
+
         $secret = new ilPasswordInputGUI(
             $this->lng->txt('auth_oidc_settings_secret'),
             'secret'
@@ -393,6 +404,11 @@ class ilOpenIdConnectSettingsGUI
 
         $this->settings->setProvider((string) $form->getInput('provider'));
         $this->settings->setClientId((string) $form->getInput('client_id'));
+
+        // --- PATCH: Second Client ID ---
+        $this->settings->setSecondClientId((string) $form->getInput('second_client_id'));
+        // --- END PATCH ---
+
         if ((string) $form->getInput('secret') !== '' && strcmp($form->getInput('secret'), '******') !== 0) {
             $this->settings->setSecret((string) $form->getInput('secret'));
         }

@@ -75,6 +75,9 @@ class ilOpenIdConnectSettings
     private bool $active = false;
     private string $provider = '';
     private string $client_id = '';
+    // --- PATCH: Second Client ID ---
+    private string $second_client_id = '';
+    // --- END PATCH ---
     private string $secret = '';
     private int $login_element_type = self::LOGIN_ELEMENT_TYPE_TXT;
     private ?string $login_element_img_name = null;
@@ -148,6 +151,18 @@ class ilOpenIdConnectSettings
     {
         return $this->client_id;
     }
+
+    // --- PATCH: Second Client ID getter/setter ---
+    public function setSecondClientId(string $second_client_id): void
+    {
+        $this->second_client_id = $second_client_id;
+    }
+
+    public function getSecondClientId(): string
+    {
+        return $this->second_client_id;
+    }
+    // --- END PATCH ---
 
     public function setSecret(string $secret): void
     {
@@ -425,6 +440,7 @@ class ilOpenIdConnectSettings
         $this->storage->set('active', (string) ((int) $this->getActive()));
         $this->storage->set('provider', $this->getProvider());
         $this->storage->set('client_id', $this->getClientId());
+        $this->storage->set('second_client_id', $this->getSecondClientId());
         $this->storage->set('secret', $this->getSecret());
         $this->storage->set('scopes', serialize($this->getAdditionalScopes()));
         $this->storage->set('le_img', $this->getLoginElementImage());
@@ -475,6 +491,7 @@ class ilOpenIdConnectSettings
         $this->setActive((bool) $this->storage->get('active', '0'));
         $this->setProvider($this->storage->get('provider', ''));
         $this->setClientId($this->storage->get('client_id', ''));
+        $this->setSecondClientId($this->storage->get('second_client_id', ''));
         $this->setSecret($this->storage->get('secret', ''));
         $this->setAdditionalScopes(
             (array) unserialize(
