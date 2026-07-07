@@ -27,6 +27,11 @@ use ILIAS\Filesystem\Filesystem;
  * PATCH: Added useUserinfoEndpoint support (getUseUserinfoEndpoint / setUseUserinfoEndpoint).
  * The new setting is stored under the key 'userinfo_endpoint_enabled' in the 'oidc' ilSetting
  * namespace — no DB migration needed, ilSetting persists arbitrary key/value pairs.
+ *
+ * PATCH: Added useRefreshToken support (getUseRefreshToken / setUseRefreshToken). When enabled,
+ * ilAuthProviderOpenIdConnect stores the access/refresh token pair returned by the IdP and
+ * silently renews the access token via the refresh_token grant once it expires, instead of
+ * forcing the user through another OIDC login round-trip. Stored under 'refresh_token_enabled'.
  */
 class ilOpenIdConnectSettings
 {
@@ -101,6 +106,11 @@ class ilOpenIdConnectSettings
     private ?string $custom_discovery_url = null;
     private ilLanguage $lng;
     private ilUserDefinedFields $udf;
+    // --- NEW ---
+    private bool $use_userinfo_endpoint = false;
+    // --- PATCH: Refresh Token ---
+    private bool $use_refresh_token = false;
+    // --- END PATCH ---
 
     private function __construct()
     {
@@ -474,6 +484,9 @@ class ilOpenIdConnectSettings
 
         // --- NEW ---
         $this->storage->set('userinfo_endpoint_enabled', (string) (int) $this->use_userinfo_endpoint);
+        // --- PATCH: Refresh Token ---
+        $this->storage->set('refresh_token_enabled', (string) (int) $this->use_refresh_token);
+        // --- END PATCH ---
     }
 
     protected function load(): void
@@ -522,6 +535,9 @@ class ilOpenIdConnectSettings
 
         // --- NEW ---
         $this->use_userinfo_endpoint = (bool) $this->storage->get('userinfo_endpoint_enabled', '0');
+        // --- PATCH: Refresh Token ---
+        $this->use_refresh_token = (bool) $this->storage->get('refresh_token_enabled', '0');
+        // --- END PATCH ---
     }
 
     public function getProfileMappingFieldValue(string $field): string
@@ -611,5 +627,30 @@ class ilOpenIdConnectSettings
     public function setUseUserinfoEndpoint(bool $use): void
     {
         $this->use_userinfo_endpoint = $use;
+    }
+
+    // -----------------------------------------------------------------------
+    // PATCH: Refresh Token getter / setter
+    // -----------------------------------------------------------------------
+
+    /**
+     * Returns true when ILIAS should persist the access/refresh token pair
+     * returned by the IdP and silently renew the access token via the
+     * refresh_token grant instead of forcing re-authentication.
+     */
+    public function getUseRefreshToken(): bool
+    {
+        return $this->use_refresh_token;
+    }
+
+    /**
+     * Enable or disable storing and silently renewing the OIDC access token
+     * via the refresh_token grant. Only takes effect when the IdP actually
+     * issues a refresh_token (typically requires the 'offline_access' scope
+     * to be added under additional scopes).
+     */
+    public function setUseRefreshToken(bool $use): void
+    {
+        $this->use_refresh_token = $use;
     }
 }

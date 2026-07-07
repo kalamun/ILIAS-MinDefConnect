@@ -194,6 +194,16 @@ class ilOpenIdConnectSettingsGUI
         $form->addItem($cb_userinfo);
         // --- END PATCH ---
 
+        // --- PATCH: Refresh Token toggle ---
+        $cb_refresh_token = new ilCheckboxInputGUI(
+            'Use Refresh Token',
+            'use_refresh_token'
+        );
+        $cb_refresh_token->setInfo('When enabled, ILIAS stores the access/refresh token pair returned by the identity provider and silently renews the access token via the refresh_token grant once it expires, instead of forcing a new OIDC login. Requires the IdP to actually issue a refresh_token — typically add "offline_access" under additional scopes below.');
+        $cb_refresh_token->setChecked($this->settings->getUseRefreshToken());
+        $form->addItem($cb_refresh_token);
+        // --- END PATCH ---
+
         $provider = new ilTextInputGUI(
             $this->lng->txt('auth_oidc_settings_provider'),
             'provider'
@@ -400,6 +410,10 @@ class ilOpenIdConnectSettingsGUI
         
         // --- PATCH ---
         $this->settings->setUseUserinfoEndpoint((bool) $form->getInput('use_userinfo_endpoint'));
+        // --- END PATCH ---
+
+        // --- PATCH: Refresh Token ---
+        $this->settings->setUseRefreshToken((bool) $form->getInput('use_refresh_token'));
         // --- END PATCH ---
 
         $this->settings->setProvider((string) $form->getInput('provider'));

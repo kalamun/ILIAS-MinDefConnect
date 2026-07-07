@@ -35,12 +35,28 @@ use Jumbojett\OpenIDConnectClient;
  * When ilOpenIdConnectSettings::getSecondClientId() is non-empty and the
  * authenticated user holds the ILIAS administrator role, a second OIDC
  * round-trip is performed using second_client_id instead of client_id.
+ *
+ * PATCH: Added Refresh Token support. When ilOpenIdConnectSettings::getUseRefreshToken()
+ * returns true, the access_token/refresh_token pair returned during token exchange is
+ * stored in ilSession. getValidAccessToken() gives other code (e.g. outbound API calls)
+ * a currently-valid access token, transparently exchanging the refresh_token for a new
+ * access token via the IdP's token endpoint once the stored one has expired — no fresh
+ * OIDC login round-trip required. Tokens are revoked and cleared on logout.
  */
 class ilAuthProviderOpenIdConnect extends ilAuthProvider
 {
     private const OIDC_AUTH_IDTOKEN = 'oidc_auth_idtoken';
     // --- PATCH: Second Client ID ---
     private const OIDC_USE_SECOND_CLIENT = 'oidc_use_second_client';
+    // --- END PATCH ---
+
+    // --- PATCH: Refresh Token ---
+    private const OIDC_AUTH_ACCESS_TOKEN = 'oidc_auth_access_token';
+    private const OIDC_AUTH_REFRESH_TOKEN = 'oidc_auth_refresh_token';
+    private const OIDC_AUTH_TOKEN_EXPIRES_AT = 'oidc_auth_token_expires_at';
+    private const OIDC_AUTH_TOKEN_CLIENT_ID = 'oidc_auth_token_client_id';
+    // Refresh proactively this many seconds before the access token actually expires.
+    private const TOKEN_REFRESH_LEEWAY = 60;
     // --- END PATCH ---
 
     private const ERR_AUTH_FAILED = 'auth_oidc_failed';
@@ -65,6 +81,11 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
     public function handleLogout(): void
     {
+        // --- PATCH: Refresh Token — always clear locally stored tokens, independent
+        // of the logout scope setting (which only controls the IdP sign-out redirect).
+        $this->clearStoredTokens();
+        // --- END PATCH ---
+
         if ($this->settings->getLogoutScope() === ilOpenIdConnectSettings::LOGOUT_SCOPE_LOCAL) {
             return;
         }
@@ -163,6 +184,12 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
             // --- END PATCH ---
 
             $status = $this->handleUpdate($status, $claims);
+
+            // --- PATCH: Refresh Token — persist access/refresh token pair ---
+            if ($status->getStatus() === ilAuthStatus::STATUS_AUTHENTICATED && $this->settings->getUseRefreshToken()) {
+                $this->storeTokens($oidc, $this->resolveClientId($use_second_client));
+            }
+            // --- END PATCH ---
 
             if ($this->settings->getLogoutScope() === ilOpenIdConnectSettings::LOGOUT_SCOPE_GLOBAL) {
                 ilSession::set(self::OIDC_AUTH_IDTOKEN, $oidc->getIdToken());
@@ -282,15 +309,9 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
     private function initClient(bool $use_second_client = false): OpenIDConnectClient
     {
-        // --- PATCH: Second Client ID ---
-        $client_id = ($use_second_client && $this->settings->getSecondClientId() !== '')
-            ? $this->settings->getSecondClientId()
-            : $this->settings->getClientId();
-        // --- END PATCH ---
-
         $oidc = new OpenIDConnectClient(
             $this->settings->getProvider(),
-            $client_id,
+            $this->resolveClientId($use_second_client),
             $this->settings->getSecret()
         );
 
@@ -298,6 +319,138 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
         return $oidc;
     }
+
+    // --- PATCH: Second Client ID ---
+    private function resolveClientId(bool $use_second_client): string
+    {
+        return ($use_second_client && $this->settings->getSecondClientId() !== '')
+            ? $this->settings->getSecondClientId()
+            : $this->settings->getClientId();
+    }
+    // --- END PATCH ---
+
+    // -----------------------------------------------------------------------
+    // PATCH: Refresh Token support - MinDefConnect / kalamun
+    // -----------------------------------------------------------------------
+
+    /**
+     * Persist the access/refresh token pair (and their expiry) returned by
+     * the IdP so getValidAccessToken() can later renew them silently.
+     */
+    private function storeTokens(OpenIDConnectClient $oidc, string $client_id): void
+    {
+        $access_token = $oidc->getAccessToken();
+        if (!is_string($access_token) || $access_token === '') {
+            return;
+        }
+
+        $token_response = $oidc->getTokenResponse();
+        $expires_in = is_object($token_response) && isset($token_response->expires_in)
+            ? (int) $token_response->expires_in
+            : 0;
+
+        ilSession::set(self::OIDC_AUTH_ACCESS_TOKEN, $access_token);
+        ilSession::set(self::OIDC_AUTH_TOKEN_EXPIRES_AT, $expires_in > 0 ? time() + $expires_in : 0);
+        ilSession::set(self::OIDC_AUTH_TOKEN_CLIENT_ID, $client_id);
+
+        $refresh_token = $oidc->getRefreshToken();
+        if (is_string($refresh_token) && $refresh_token !== '') {
+            ilSession::set(self::OIDC_AUTH_REFRESH_TOKEN, $refresh_token);
+        }
+
+        $this->logger->debug('Stored OIDC access/refresh token; expires in ' . $expires_in . 's.');
+    }
+
+    /**
+     * Best-effort revocation of the refresh token at the IdP, then clears
+     * every locally stored token. Revocation failures are logged and
+     * otherwise ignored — the local session copy is cleared either way.
+     */
+    private function clearStoredTokens(): void
+    {
+        $refresh_token = ilSession::get(self::OIDC_AUTH_REFRESH_TOKEN);
+        $client_id = ilSession::get(self::OIDC_AUTH_TOKEN_CLIENT_ID);
+
+        if (is_string($refresh_token) && $refresh_token !== '' && is_string($client_id) && $client_id !== '') {
+            try {
+                $oidc = new OpenIDConnectClient($this->settings->getProvider(), $client_id, $this->settings->getSecret());
+                $oidc->revokeToken($refresh_token, 'refresh_token');
+            } catch (Exception $e) {
+                $this->logger->warning('Revoking OIDC refresh token failed: ' . $e->getMessage());
+            }
+        }
+
+        ilSession::set(self::OIDC_AUTH_ACCESS_TOKEN, '');
+        ilSession::set(self::OIDC_AUTH_REFRESH_TOKEN, '');
+        ilSession::set(self::OIDC_AUTH_TOKEN_EXPIRES_AT, 0);
+        ilSession::set(self::OIDC_AUTH_TOKEN_CLIENT_ID, '');
+    }
+
+    /**
+     * Returns a currently valid OIDC access token for the logged-in user,
+     * transparently exchanging the stored refresh_token for a new access
+     * token once the stored one has expired (or is about to). Returns null
+     * when no token is available — e.g. the user did not authenticate via
+     * OIDC, refresh token support is disabled, the IdP never issued a
+     * refresh_token, or the silent renewal itself failed.
+     *
+     * Intended for other ILIAS/plugin code (e.g. outbound API calls) that
+     * needs to act on behalf of the current user without forcing a fresh
+     * OIDC login round-trip.
+     */
+    public static function getValidAccessToken(): ?string
+    {
+        global $DIC;
+        $logger = $DIC->logger()->auth();
+
+        $access_token = ilSession::get(self::OIDC_AUTH_ACCESS_TOKEN);
+        if (!is_string($access_token) || $access_token === '') {
+            return null;
+        }
+
+        $expires_at = (int) ilSession::get(self::OIDC_AUTH_TOKEN_EXPIRES_AT);
+        if ($expires_at === 0 || time() < ($expires_at - self::TOKEN_REFRESH_LEEWAY)) {
+            return $access_token;
+        }
+
+        $refresh_token = ilSession::get(self::OIDC_AUTH_REFRESH_TOKEN);
+        $client_id = ilSession::get(self::OIDC_AUTH_TOKEN_CLIENT_ID);
+
+        if (!is_string($refresh_token) || $refresh_token === '' || !is_string($client_id) || $client_id === '') {
+            $logger->debug('OIDC access token expired and no refresh token is available for silent renewal.');
+            return null;
+        }
+
+        try {
+            $settings = ilOpenIdConnectSettings::getInstance();
+            $oidc = new OpenIDConnectClient($settings->getProvider(), $client_id, $settings->getSecret());
+
+            $token_json = $oidc->refreshToken($refresh_token);
+
+            if (!is_object($token_json) || !isset($token_json->access_token)) {
+                $logger->warning('OIDC refresh token exchange did not return an access token.');
+                return null;
+            }
+
+            ilSession::set(self::OIDC_AUTH_ACCESS_TOKEN, $token_json->access_token);
+            ilSession::set(
+                self::OIDC_AUTH_REFRESH_TOKEN,
+                $token_json->refresh_token ?? $refresh_token
+            );
+            ilSession::set(
+                self::OIDC_AUTH_TOKEN_EXPIRES_AT,
+                isset($token_json->expires_in) ? time() + (int) $token_json->expires_in : 0
+            );
+
+            $logger->debug('OIDC access token refreshed silently.');
+            return $token_json->access_token;
+        } catch (Exception $e) {
+            $logger->warning('Silent OIDC token refresh failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    // --- END PATCH ---
 
     // --- PATCH: Second Client ID helpers ---
 

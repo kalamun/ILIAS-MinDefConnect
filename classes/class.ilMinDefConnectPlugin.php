@@ -7,7 +7,7 @@
  */
 class ilMinDefConnectPlugin extends ilUserInterfaceHookPlugin
 {
-    const CTYPE = 'Services';
+    const CTYPE = 'components/ILIAS';
     const CNAME = 'UIComponent';
     const SLOT_ID = 'uihk';
     const PLUGIN_NAME = 'MinDefConnect';

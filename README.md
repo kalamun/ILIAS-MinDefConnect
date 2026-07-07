@@ -36,6 +36,8 @@ To remove the patch, uncheck the "Enable" checkbox, then click `Save`.
 When the patch is enabled, you can navigate to the OIDC settings page (`Administration` > `Authentication and Registration` > `OpenID Connect`) and enable the UserInfo endpoint support by checking the relative checkbox.<br>
 You can also choose to remove the default login form from the login page by checking the relative box.
 
+You can also check "Use Refresh Token" to have ILIAS store the access/refresh token pair returned by the identity provider and silently renew the access token via the refresh_token grant once it expires, instead of forcing a new OIDC login. This requires the identity provider to actually issue a refresh_token, which typically means adding `offline_access` under the additional scopes on the same settings page. Other plugin/ILIAS code can retrieve a currently-valid access token via `ilAuthProviderOpenIdConnect::getValidAccessToken()`.
+
 All the admin users are forced to log-in via OIDC.<br>
 To support the internet workflow, a secondary client ID has been added to the settings page. When set, the admin users will be authentified by using that secondary client ID.
 
