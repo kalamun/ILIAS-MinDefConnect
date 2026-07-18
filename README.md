@@ -33,15 +33,39 @@ It could also be the case that your ILIAS version is not compatible with the plu
 To apply the patch, check the "Enable" checkbox, then click `Save`.<br>
 To remove the patch, uncheck the "Enable" checkbox, then click `Save`.
 
-When the patch is enabled, you can navigate to the OIDC settings page (`Administration` > `Authentication and Registration` > `OpenID Connect`) and enable the UserInfo endpoint support by checking the relative checkbox.<br>
+When the patch is enabled, you can navigate to the OIDC settings page (`Administration` > `Users and roles` > `Authentication and Registration` > `OpenID Connect`) and enable the UserInfo endpoint support by checking the relative checkbox.<br>
 You can also choose to remove the default login form from the login page by checking the relative box.
 
 You can also check "Use Refresh Token" to have ILIAS store the access/refresh token pair returned by the identity provider and silently renew the access token via the refresh_token grant once it expires, instead of forcing a new OIDC login. This requires the identity provider to actually issue a refresh_token, which typically means adding `offline_access` under the additional scopes on the same settings page. Other plugin/ILIAS code can retrieve a currently-valid access token via `ilAuthProviderOpenIdConnect::getValidAccessToken()`.
 
-All the admin users are forced to log-in via OIDC.<br>
+All the users with auth method set to OIDC are forced to log-in via OIDC.<br>
 To support the internet workflow, a secondary client ID has been added to the settings page. When set, the admin users will be authentified by using that secondary client ID.
 
-### How to recover admin access if OIDC is not working
+## How to setup ILIAS
+
+### Intradef
+- Go to `Administration` > `Extending ILIAS` > `Plugins`
+- Click on the MinDefConnect dropdown, then select Configure
+- Check both checkboxes: Hide ILIAS form and Enable MinDefConnect
+- Go to `Administration` > `Users and roles` > `Authentication and Registration`.
+- Go to `OpenID Connect` tab
+- Fill all the mandatory informations, check both _Fetch additional claims from UserInfo_ and _Use Refresh Token_ and enable OpenID Connect by checking the related checkbox
+- Go to `Authentication` tab
+- If not already set, select _ILIAS Auth_ as the default method
+
+### Internet
+- Go to `Administration` > `Extending ILIAS` > `Plugins`
+- Click on the MinDefConnect dropdown, then select Configure
+- Check both checkboxes: Hide ILIAS form and Enable MinDefConnect
+- Go to `Administration` > `Users and roles` > `Authentication and Registration`.
+- Go to `OpenID Connect` tab
+- Fill all the mandatory informations, check both _Fetch additional claims from UserInfo_ and _Use Refresh Token_ and enable OpenID Connect by checking the related checkbox
+- Go to `Authentication` tab
+- If not already set, select _ILIAS Auth_ as the default method
+- Go to `Administration` > `Users and roles` > `User Management`.
+- Edit the administrators and set their authentication method as `OpenID Connect`
+
+## How to recover admin access if OIDC is not working
 
 For security reasons, the only way to recover admin access when you are stuck outside for some reasons, is to disable OpenID Connect from the database.<br>
 To do so, run this query: `UPDATE settings SET value = '0' WHERE module = 'oidc' AND keyword = 'active';` on the ILIAS db.

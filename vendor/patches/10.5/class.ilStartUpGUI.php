@@ -768,7 +768,12 @@ class ilStartUpGUI implements ilCtrlBaseClassInterface, ilCtrlSecurityInterface
             $login = $form_data[self::PROP_USERNAME] ?? '';
             if ($login !== '') {
                 $uid = (int) ilObjUser::_lookupId($login);
-                if ($uid > 0 && $this->dic->rbac()->review()->isAssigned($uid, SYSTEM_ROLE_ID)) {
+                if (
+                    $uid > 0 &&
+                    (int) ilAuthUtils::_getAuthMode(ilObjUser::_lookupAuthMode($uid)) === ilAuthUtils::AUTH_OPENID_CONNECT
+                    // commented out: force OIDC for admins only
+                    // && $this->dic->rbac()->review()->isAssigned($uid, SYSTEM_ROLE_ID)
+                ) {
                     header('Location: ' . ILIAS_HTTP_PATH . '/openidconnect.php');
                     exit();
                 }
