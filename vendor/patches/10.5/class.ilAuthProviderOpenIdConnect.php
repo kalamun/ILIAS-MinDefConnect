@@ -25,16 +25,18 @@ use Jumbojett\OpenIDConnectClient;
  * Class ilAuthProviderOpenIdConnect
  *
  * PATCH: Added optional UserInfo endpoint support.
- * PATCH: Added second_client_id support for admin users.
+ * PATCH: Added second_client_id/second_client_secret support for admin users.
  *
  * When ilOpenIdConnectSettings::getUseUserinfoEndpoint() returns true the
  * provider calls $oidc->requestUserInfo() immediately after authenticate()
  * and merges the returned claims on top of the verified ID-token claims.
  * Per OIDC Core §5.3.2, UserInfo claims take precedence on conflict.
  *
- * When ilOpenIdConnectSettings::getSecondClientId() is non-empty and the
- * authenticated user holds the ILIAS administrator role, a second OIDC
- * round-trip is performed using second_client_id instead of client_id.
+ * When ilOpenIdConnectSettings::useSecondClient() returns true (i.e. both
+ * second_client_id and second_client_secret are set) and the authenticated
+ * user holds the ILIAS administrator role, a second OIDC round-trip is
+ * performed using second_client_id/second_client_secret instead of
+ * client_id/secret.
  *
  * PATCH: Added Refresh Token support. When ilOpenIdConnectSettings::getUseRefreshToken()
  * returns true, the access_token/refresh_token pair returned during token exchange is
@@ -170,7 +172,7 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
             }
 
             // --- PATCH: Second Client ID — re-authenticate admins with second_client_id ---
-            if (!$use_second_client && $this->settings->getSecondClientId() !== '') {
+            if (!$use_second_client && $this->settings->useSecondClient()) {
                 $uid_field   = $this->settings->getUidField();
                 $ext_account = $claims->{$uid_field} ?? '';
                 if (is_string($ext_account) && $ext_account !== '' && $this->isExternalAccountAdmin($ext_account)) {
@@ -312,7 +314,7 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
         $oidc = new OpenIDConnectClient(
             $this->settings->getProvider(),
             $this->resolveClientId($use_second_client),
-            $this->settings->getSecret()
+            $this->resolveClientSecret($use_second_client)
         );
 
         $oidc->setCodeChallengeMethod('S256');
@@ -320,12 +322,32 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
         return $oidc;
     }
 
-    // --- PATCH: Second Client ID ---
+    // --- PATCH: Second Client ID/Key ---
     private function resolveClientId(bool $use_second_client): string
     {
-        return ($use_second_client && $this->settings->getSecondClientId() !== '')
+        return ($use_second_client && $this->settings->useSecondClient())
             ? $this->settings->getSecondClientId()
             : $this->settings->getClientId();
+    }
+
+    private function resolveClientSecret(bool $use_second_client): string
+    {
+        return ($use_second_client && $this->settings->useSecondClient())
+            ? $this->settings->getSecondClientSecret()
+            : $this->settings->getSecret();
+    }
+
+    /**
+     * Resolves the client secret matching a previously resolved client_id
+     * (e.g. one stored in the session for token refresh/revocation), so the
+     * secret sent to the token endpoint always matches the client_id it was
+     * issued for.
+     */
+    private function resolveClientSecretForClientId(string $client_id): string
+    {
+        return ($this->settings->useSecondClient() && $client_id === $this->settings->getSecondClientId())
+            ? $this->settings->getSecondClientSecret()
+            : $this->settings->getSecret();
     }
     // --- END PATCH ---
 
@@ -373,7 +395,11 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
         if (is_string($refresh_token) && $refresh_token !== '' && is_string($client_id) && $client_id !== '') {
             try {
-                $oidc = new OpenIDConnectClient($this->settings->getProvider(), $client_id, $this->settings->getSecret());
+                $oidc = new OpenIDConnectClient(
+                    $this->settings->getProvider(),
+                    $client_id,
+                    $this->resolveClientSecretForClientId($client_id)
+                );
                 $oidc->revokeToken($refresh_token, 'refresh_token');
             } catch (Exception $e) {
                 $this->logger->warning('Revoking OIDC refresh token failed: ' . $e->getMessage());
@@ -423,7 +449,10 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
         try {
             $settings = ilOpenIdConnectSettings::getInstance();
-            $oidc = new OpenIDConnectClient($settings->getProvider(), $client_id, $settings->getSecret());
+            $client_secret = ($settings->useSecondClient() && $client_id === $settings->getSecondClientId())
+                ? $settings->getSecondClientSecret()
+                : $settings->getSecret();
+            $oidc = new OpenIDConnectClient($settings->getProvider(), $client_id, $client_secret);
 
             $token_json = $oidc->refreshToken($refresh_token);
 

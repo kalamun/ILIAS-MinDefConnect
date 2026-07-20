@@ -220,17 +220,6 @@ class ilOpenIdConnectSettingsGUI
         $client_id->setValue($this->settings->getClientId());
         $form->addItem($client_id);
 
-        // --- PATCH: Second Client ID ---
-        $second_client_id = new ilTextInputGUI(
-            'Second Client ID',
-            'second_client_id'
-        );
-        $second_client_id->setRequired(false);
-        $second_client_id->setInfo('Optional: A second client ID used to authenticate admins.');
-        $second_client_id->setValue($this->settings->getSecondClientId());
-        $form->addItem($second_client_id);
-        // --- END PATCH ---
-
         $secret = new ilPasswordInputGUI(
             $this->lng->txt('auth_oidc_settings_secret'),
             'secret'
@@ -242,6 +231,30 @@ class ilOpenIdConnectSettingsGUI
             $secret->setValue('******');
         }
         $form->addItem($secret);
+
+        // --- PATCH: Second Client ID/Key ---
+        $second_client_id = new ilTextInputGUI(
+            'Second Client ID',
+            'second_client_id'
+        );
+        $second_client_id->setRequired(false);
+        $second_client_id->setInfo('Optional: A second client ID used to authenticate admins. Only used when both the Second Client ID and the Second Client Key are set.');
+        $second_client_id->setValue($this->settings->getSecondClientId());
+        $form->addItem($second_client_id);
+
+        $second_client_secret = new ilPasswordInputGUI(
+            'Second Client Key',
+            'second_client_secret'
+        );
+        $second_client_secret->setSkipSyntaxCheck(true);
+        $second_client_secret->setRetype(false);
+        $second_client_secret->setRequired(false);
+        $second_client_secret->setInfo('Optional: The client key used together with the Second Client ID to authenticate admins. Only used when both the Second Client ID and this key are set.');
+        if ($this->settings->getSecondClientSecret() !== '') {
+            $second_client_secret->setValue('******');
+        }
+        $form->addItem($second_client_secret);
+        // --- END PATCH ---
 
         $login_element = new ilRadioGroupInputGUI(
             $this->lng->txt('auth_oidc_settings_le'),
@@ -419,13 +432,18 @@ class ilOpenIdConnectSettingsGUI
         $this->settings->setProvider((string) $form->getInput('provider'));
         $this->settings->setClientId((string) $form->getInput('client_id'));
 
-        // --- PATCH: Second Client ID ---
-        $this->settings->setSecondClientId((string) $form->getInput('second_client_id'));
-        // --- END PATCH ---
-
         if ((string) $form->getInput('secret') !== '' && strcmp($form->getInput('secret'), '******') !== 0) {
             $this->settings->setSecret((string) $form->getInput('secret'));
         }
+
+        // --- PATCH: Second Client ID/Key ---
+        $this->settings->setSecondClientId((string) $form->getInput('second_client_id'));
+
+        if ((string) $form->getInput('second_client_secret') !== '' &&
+            strcmp($form->getInput('second_client_secret'), '******') !== 0) {
+            $this->settings->setSecondClientSecret((string) $form->getInput('second_client_secret'));
+        }
+        // --- END PATCH ---
 
         $this->settings->setLoginElementType((int) $form->getInput('le'));
         $this->settings->setLoginElementText((string) $form->getInput('le_text'));
