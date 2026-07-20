@@ -44,26 +44,31 @@ To support the internet workflow, a secondary client ID has been added to the se
 ## How to setup ILIAS
 
 ### Intradef
-- Go to `Administration` > `Extending ILIAS` > `Plugins`
-- Click on the MinDefConnect dropdown, then select Configure
-- Check both checkboxes: Hide ILIAS form and Enable MinDefConnect
-- Go to `Administration` > `Users and roles` > `Authentication and Registration`.
-- Go to `OpenID Connect` tab
-- Fill all the mandatory informations, check both _Fetch additional claims from UserInfo_ and _Use Refresh Token_ and enable OpenID Connect by checking the related checkbox
-- Go to `Authentication` tab
-- If not already set, select _ILIAS Auth_ as the default method
+* Go to `Administration` > `Extending ILIAS` > `Plugins`
+    * Click on the MinDefConnect dropdown, then select Configure
+    * Check both checkboxes: Hide ILIAS form and Enable MinDefConnect
+* Go to `Administration` > `Users and roles` > `Authentication and Registration`.
+* Go to `OpenID Connect` tab
+    * Fill all the mandatory informations
+    * Check both _Fetch additional claims from UserInfo_ and _Use Refresh Token_
+    * Enable OpenID Connect by checking the related checkbox
+* Go to `Authentication` tab
+    * If not already set, select _ILIAS Auth_ as the default method
 
 ### Internet
-- Go to `Administration` > `Extending ILIAS` > `Plugins`
-- Click on the MinDefConnect dropdown, then select Configure
-- Check both checkboxes: Hide ILIAS form and Enable MinDefConnect
-- Go to `Administration` > `Users and roles` > `Authentication and Registration`.
-- Go to `OpenID Connect` tab
-- Fill all the mandatory informations, check both _Fetch additional claims from UserInfo_ and _Use Refresh Token_ and enable OpenID Connect by checking the related checkbox
-- Go to `Authentication` tab
-- If not already set, select _ILIAS Auth_ as the default method
-- Go to `Administration` > `Users and roles` > `User Management`.
-- Edit the administrators and set their authentication method as `OpenID Connect`
+* Go to `Administration` > `Extending ILIAS` > `Plugins`
+    * Click on the MinDefConnect dropdown, then select Configure
+    * Check both checkboxes: Hide ILIAS form and Enable MinDefConnect
+* Go to `Administration` > `Users and roles` > `Authentication and Registration`.
+* Go to `OpenID Connect` tab
+    * Fill all the mandatory informations
+    * Check both _Fetch additional claims from UserInfo_ and _Use Refresh Token_
+    * Set the secondary Client ID and Client Key that will be used for logging the administrators, enabling the 2FA provided by MinDefConnect
+    * Enable OpenID Connect by checking the related checkbox
+* Go to `Authentication` tab
+    * If not already set, select _ILIAS Auth_ as the default method
+* Go to `Administration` > `Users and roles` > `User Management`.
+    * Edit the administrators and set their authentication method as `OpenID Connect`
 
 ## How to recover admin access if OIDC is not working
 
