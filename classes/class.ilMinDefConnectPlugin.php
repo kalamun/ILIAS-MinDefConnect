@@ -14,6 +14,8 @@ class ilMinDefConnectPlugin extends ilUserInterfaceHookPlugin
 
     protected static $instance = null;
 
+    private bool $reapply_patch_after_update = false;
+
     public function __construct(
         \ilDBInterface $db,
         \ilComponentRepositoryWrite $component_repository,
@@ -58,6 +60,27 @@ class ilMinDefConnectPlugin extends ilUserInterfaceHookPlugin
     {
         self::disableEverything();
         return parent::beforeUninstall();
+    }
+
+    protected function beforeUpdate(): bool
+    {
+        $config_gui = new ilMinDefConnectConfigGUI();
+        if ($config_gui->isPatchActive()) {
+            $config_gui->unpatch();
+            $this->reapply_patch_after_update = true;
+        }
+
+        return parent::beforeUpdate();
+    }
+
+    protected function afterUpdate(): void
+    {
+        if ($this->reapply_patch_after_update) {
+            $this->reapply_patch_after_update = false;
+            (new ilMinDefConnectConfigGUI())->patch();
+        }
+
+        parent::afterUpdate();
     }
 
     protected function disableEverything()

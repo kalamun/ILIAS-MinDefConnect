@@ -60,6 +60,11 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
     return $file_path[0] . $file_path[1];
   }
 
+  public function isPatchActive(): bool
+  {
+    return $this->is_active;
+  }
+
   public function detect_version()
   {
     $this->is_writable = true;
