@@ -234,9 +234,23 @@ class ilAuthProviderOpenIdConnect extends ilAuthProvider
 
             $this->logger->dump($userinfo, ilLogLevel::DEBUG);
 
-            // Merge: UserInfo claims win on conflict (OIDC Core §5.3.2).
+            // Merge: UserInfo claims win on conflict (OIDC Core §5.3.2) — except
+            // for the uid field. That one is used to match the returning user
+            // against the account created on first login (ext_account in
+            // usr_data). Letting the UserInfo endpoint override it risks
+            // silently breaking that match on a later login if the IdP does
+            // not return byte-for-byte the same value for that claim from
+            // both endpoints (case, formatting, presence), effectively
+            // locking the user out of their existing account. The ID token
+            // is cryptographically verified, so it stays authoritative for
+            // this one claim; every other claim still gets overridden by
+            // UserInfo as before.
+            $uid_field = $this->settings->getUidField();
             $merged = clone $id_token_claims;
             foreach ($userinfo as $key => $value) {
+                if ($key === $uid_field) {
+                    continue;
+                }
                 $merged->$key = $value;
             }
 
