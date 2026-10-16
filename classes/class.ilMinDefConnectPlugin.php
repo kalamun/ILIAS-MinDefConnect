@@ -50,6 +50,17 @@ class ilMinDefConnectPlugin extends ilUserInterfaceHookPlugin
         return self::PLUGIN_NAME;
     }
 
+    protected function afterActivation(): void
+    {
+        $config_gui = new ilMinDefConnectConfigGUI();
+        if (!$config_gui->isPatchActive() && $config_gui->canPatch()) {
+            $config_gui->patch();
+        }
+
+        self::enableOpenIdConnect();
+        parent::afterActivation();
+    }
+
     protected function afterDeactivation(): void
     {
         self::disableEverything();
@@ -90,5 +101,37 @@ class ilMinDefConnectPlugin extends ilUserInterfaceHookPlugin
 
         $ilMinDefConnectConfigGUI = new ilMinDefConnectConfigGUI();
         $ilMinDefConnectConfigGUI->unpatch();
+
+        self::disableOpenIdConnect();
+    }
+
+    protected function enableOpenIdConnect(): void
+    {
+        global $DIC;
+
+        $oidc_settings = ilOpenIdConnectSettings::getInstance();
+        $oidc_settings->setActive(true);
+        $oidc_settings->save();
+
+        // 'userinfo_endpoint_enabled' and 'refresh_token_enabled' only exist on the
+        // patched OpenID Connect settings class (see ilMinDefConnectConfigGUI::patch()),
+        // so they are written directly to the underlying storage rather than through
+        // setters that may not exist on the currently loaded (unpatched) class.
+        $oidc_storage = new ilSetting('oidc');
+        $oidc_storage->set('userinfo_endpoint_enabled', '1');
+        $oidc_storage->set('refresh_token_enabled', '1');
+
+        $DIC['ilias']->setSetting('auth_mode', (string) ilAuthUtils::AUTH_OPENID_CONNECT);
+    }
+
+    protected function disableOpenIdConnect(): void
+    {
+        global $DIC;
+
+        $oidc_settings = ilOpenIdConnectSettings::getInstance();
+        $oidc_settings->setActive(false);
+        $oidc_settings->save();
+
+        $DIC['ilias']->setSetting('auth_mode', (string) ilAuthUtils::AUTH_LOCAL);
     }
 }

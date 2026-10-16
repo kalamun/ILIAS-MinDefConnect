@@ -65,6 +65,11 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
     return $this->is_active;
   }
 
+  public function canPatch(): bool
+  {
+    return $this->is_writable && !empty($this->compatible_version);
+  }
+
   public function detect_version()
   {
     $this->is_writable = true;
@@ -174,7 +179,7 @@ class ilMinDefConnectConfigGUI extends ilPluginConfigGUI
     $field = $this->ui_factory->input()->field();
     $plugin = $this->plugin_object;
 
-    $can_patch = $this->is_writable && !empty($this->compatible_version);
+    $can_patch = $this->canPatch();
 
     $values = [
       'login' => [
